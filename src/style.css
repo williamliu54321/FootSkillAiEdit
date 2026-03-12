@@ -207,3 +207,250 @@ header .subtitle {
 .loading p {
   color: #888;
 }
+
+/* Editor Layout */
+.editor {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  flex: 1;
+}
+
+/* Toolbar */
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 12px 20px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  flex-wrap: wrap;
+}
+
+.tool-btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: #22c55e;
+  color: white;
+}
+
+.tool-btn:hover {
+  background: #16a34a;
+  transform: scale(1.02);
+}
+
+.tool-btn.danger {
+  background: #ef4444;
+}
+
+.tool-btn.danger:hover {
+  background: #dc2626;
+}
+
+#time-display {
+  font-family: monospace;
+  font-size: 1rem;
+  color: #888;
+  min-width: 100px;
+}
+
+/* Effect Buttons */
+.effect-buttons {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.effect-btn {
+  padding: 8px 16px;
+  border: 2px solid;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: transparent;
+}
+
+.effect-btn.skeleton {
+  border-color: #22c55e;
+  color: #22c55e;
+}
+
+.effect-btn.skeleton:hover {
+  background: #22c55e;
+  color: white;
+}
+
+.effect-btn.scan {
+  border-color: #6366f1;
+  color: #6366f1;
+}
+
+.effect-btn.scan:hover {
+  background: #6366f1;
+  color: white;
+}
+
+.effect-btn.rating {
+  border-color: #f59e0b;
+  color: #f59e0b;
+}
+
+.effect-btn.rating:hover {
+  background: #f59e0b;
+  color: white;
+}
+
+/* Timeline Container */
+.timeline-container {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 12px;
+  padding: 15px;
+  overflow: hidden;
+}
+
+.timeline {
+  position: relative;
+  min-height: 180px;
+}
+
+/* Timeline Tracks */
+.timeline-track {
+  display: flex;
+  align-items: center;
+  height: 44px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.timeline-track:last-of-type {
+  border-bottom: none;
+}
+
+.track-label {
+  width: 80px;
+  padding: 0 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #888;
+  flex-shrink: 0;
+}
+
+.track-content {
+  position: relative;
+  flex: 1;
+  height: 32px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 4px;
+}
+
+/* Effect Blocks */
+.effect-block {
+  position: absolute;
+  height: 100%;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: white;
+  transition: filter 0.2s;
+  overflow: hidden;
+}
+
+.effect-block:hover {
+  filter: brightness(1.2);
+}
+
+.effect-block.skeleton {
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+}
+
+.effect-block.scan {
+  background: linear-gradient(135deg, #6366f1, #4f46e5);
+}
+
+.effect-block.rating {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+}
+
+/* Resize Handles */
+.resize-handle {
+  position: absolute;
+  top: 0;
+  width: 8px;
+  height: 100%;
+  cursor: ew-resize;
+  background: rgba(255, 255, 255, 0.3);
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.resize-handle:hover,
+.effect-block:hover .resize-handle {
+  opacity: 1;
+}
+
+.resize-handle.left {
+  left: 0;
+  border-radius: 4px 0 0 4px;
+}
+
+.resize-handle.right {
+  right: 0;
+  border-radius: 0 4px 4px 0;
+}
+
+/* Playhead */
+.playhead {
+  position: absolute;
+  top: 0;
+  width: 2px;
+  height: calc(100% - 30px);
+  background: #ff4444;
+  z-index: 10;
+  pointer-events: none;
+  box-shadow: 0 0 8px rgba(255, 68, 68, 0.5);
+}
+
+.playhead::before {
+  content: '';
+  position: absolute;
+  top: -6px;
+  left: -5px;
+  width: 12px;
+  height: 12px;
+  background: #ff4444;
+  border-radius: 50%;
+}
+
+/* Timeline Ruler */
+.timeline-ruler {
+  position: relative;
+  height: 25px;
+  margin-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.ruler-marker {
+  position: absolute;
+  transform: translateX(-50%);
+  font-size: 0.7rem;
+  color: #666;
+  padding-top: 6px;
+}
+
+/* Instructions */
+.instructions {
+  text-align: center;
+  color: #666;
+  font-size: 0.8rem;
+  padding: 10px;
+}
