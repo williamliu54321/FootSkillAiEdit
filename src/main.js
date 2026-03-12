@@ -60,6 +60,8 @@ let showRating = false;
 let ratingTimeout = null;
 let capturedFrame = null;
 let ratingStats = null;
+let ratingAnimStart = 0;
+let particles = [];
 
 // Pose connections for skeleton
 const POSE_CONNECTIONS = [
@@ -220,78 +222,120 @@ function draw() {
 
   // FIFA-style rating overlay
   if (showRating && capturedFrame) {
+    const elapsed = Date.now() - ratingAnimStart;
+    const animProgress = Math.min(elapsed / 600, 1); // 600ms entrance
+    const easeOut = 1 - Math.pow(1 - animProgress, 3);
+
     // Full dark overlay
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.95)';
+    ctx.fillStyle = `rgba(0, 0, 0, ${0.95 * easeOut})`;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Card dimensions - FIFA shield shape
-    const cardW = Math.min(canvas.width * 0.85, 500);
-    const cardH = cardW * 1.45;
-    const cardX = (canvas.width - cardW) / 2;
-    const cardY = (canvas.height - cardH) / 2;
+    // Update and draw particles
+    particles.forEach(p => {
+      p.x += p.speedX;
+      p.y += p.speedY;
+      p.opacity -= 0.003;
+
+      if (p.opacity > 0) {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fillStyle = `hsla(${p.hue}, 80%, 60%, ${p.opacity})`;
+        ctx.fill();
+      }
+    });
+
+    // Card dimensions
+    const cardW = Math.min(canvas.width * 0.88, 520);
+    const cardH = cardW * 1.42;
+
+    // Animated scale and position
+    const scale = 0.5 + 0.5 * easeOut;
+    const cardX = (canvas.width - cardW * scale) / 2;
+    const cardY = (canvas.height - cardH * scale) / 2;
+
+    ctx.save();
+    ctx.translate(canvas.width / 2, canvas.height / 2);
+    ctx.scale(scale, scale);
+    ctx.translate(-canvas.width / 2, -canvas.height / 2);
+
+    const drawCardX = (canvas.width - cardW) / 2;
+    const drawCardY = (canvas.height - cardH) / 2;
+
+    // Pulsing glow
+    const glowPulse = Math.sin(elapsed / 200) * 10 + 30;
+    ctx.shadowColor = '#ffd700';
+    ctx.shadowBlur = glowPulse;
 
     // Draw shield shape
-    ctx.beginPath();
-    ctx.moveTo(cardX + 20, cardY);
-    ctx.lineTo(cardX + cardW - 20, cardY);
-    ctx.quadraticCurveTo(cardX + cardW, cardY, cardX + cardW, cardY + 20);
-    ctx.lineTo(cardX + cardW, cardY + cardH * 0.75);
-    ctx.quadraticCurveTo(cardX + cardW, cardY + cardH * 0.85, cardX + cardW * 0.85, cardY + cardH * 0.92);
-    ctx.lineTo(cardX + cardW / 2, cardY + cardH);
-    ctx.lineTo(cardX + cardW * 0.15, cardY + cardH * 0.92);
-    ctx.quadraticCurveTo(cardX, cardY + cardH * 0.85, cardX, cardY + cardH * 0.75);
-    ctx.lineTo(cardX, cardY + 20);
-    ctx.quadraticCurveTo(cardX, cardY, cardX + 20, cardY);
-    ctx.closePath();
+    function drawShield(x, y, w, h) {
+      ctx.beginPath();
+      ctx.moveTo(x + 25, y);
+      ctx.lineTo(x + w - 25, y);
+      ctx.quadraticCurveTo(x + w, y, x + w, y + 25);
+      ctx.lineTo(x + w, y + h * 0.72);
+      ctx.quadraticCurveTo(x + w, y + h * 0.82, x + w * 0.82, y + h * 0.9);
+      ctx.lineTo(x + w / 2, y + h);
+      ctx.lineTo(x + w * 0.18, y + h * 0.9);
+      ctx.quadraticCurveTo(x, y + h * 0.82, x, y + h * 0.72);
+      ctx.lineTo(x, y + 25);
+      ctx.quadraticCurveTo(x, y, x + 25, y);
+      ctx.closePath();
+    }
 
-    // Gold gradient fill
-    const cardGrad = ctx.createLinearGradient(cardX, cardY, cardX + cardW, cardY + cardH);
-    cardGrad.addColorStop(0, '#d4a84b');
+    drawShield(drawCardX, drawCardY, cardW, cardH);
+
+    // Animated gradient
+    const gradOffset = (elapsed / 50) % cardW;
+    const cardGrad = ctx.createLinearGradient(
+      drawCardX - gradOffset, drawCardY,
+      drawCardX + cardW + gradOffset, drawCardY + cardH
+    );
+    cardGrad.addColorStop(0, '#b8942a');
+    cardGrad.addColorStop(0.15, '#e8d68a');
     cardGrad.addColorStop(0.3, '#f5e6a3');
-    cardGrad.addColorStop(0.5, '#d4a84b');
+    cardGrad.addColorStop(0.5, '#d4af37');
     cardGrad.addColorStop(0.7, '#f5e6a3');
-    cardGrad.addColorStop(1, '#d4a84b');
+    cardGrad.addColorStop(0.85, '#e8d68a');
+    cardGrad.addColorStop(1, '#b8942a');
     ctx.fillStyle = cardGrad;
     ctx.fill();
+    ctx.shadowBlur = 0;
 
-    // Card border
-    ctx.strokeStyle = '#8b7335';
-    ctx.lineWidth = 3;
+    // Border
+    ctx.strokeStyle = '#7a5f1a';
+    ctx.lineWidth = 4;
     ctx.stroke();
 
-    // Diagonal shine lines
+    // Shimmer effect
     ctx.save();
+    drawShield(drawCardX, drawCardY, cardW, cardH);
     ctx.clip();
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
-    ctx.lineWidth = 2;
-    for (let i = -cardH; i < cardW + cardH; i += 25) {
-      ctx.beginPath();
-      ctx.moveTo(cardX + i, cardY);
-      ctx.lineTo(cardX + i - cardH, cardY + cardH);
-      ctx.stroke();
-    }
+
+    const shimmerX = ((elapsed / 8) % (cardW * 2.5)) - cardW * 0.5;
+    const shimmerGrad = ctx.createLinearGradient(
+      drawCardX + shimmerX - 80, drawCardY,
+      drawCardX + shimmerX + 80, drawCardY + cardH
+    );
+    shimmerGrad.addColorStop(0, 'rgba(255,255,255,0)');
+    shimmerGrad.addColorStop(0.5, 'rgba(255,255,255,0.3)');
+    shimmerGrad.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = shimmerGrad;
+    ctx.fillRect(drawCardX, drawCardY, cardW, cardH);
+
+    // Curved shine
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+    ctx.lineWidth = 40;
+    ctx.beginPath();
+    ctx.arc(drawCardX - cardW * 0.3, drawCardY + cardH * 0.3, cardW * 1.1, -0.5, 0.7);
+    ctx.stroke();
     ctx.restore();
 
-    // Rating and Position - left side
-    const leftX = cardX + cardW * 0.12;
+    // Player image
+    const imgW = cardW * 0.52;
+    const imgH = cardW * 0.65;
+    const imgX = drawCardX + cardW * 0.42;
+    const imgY = drawCardY + cardH * 0.05;
 
-    // Overall rating
-    ctx.fillStyle = '#2d2d2d';
-    ctx.font = `bold ${cardW * 0.18}px Arial`;
-    ctx.textAlign = 'center';
-    ctx.fillText(ratingStats.overall, leftX, cardY + cardH * 0.12);
-
-    // Position
-    ctx.font = `bold ${cardW * 0.07}px Arial`;
-    ctx.fillText('ST', leftX, cardY + cardH * 0.17);
-
-    // Player image - center right
-    const imgW = cardW * 0.55;
-    const imgH = cardW * 0.55;
-    const imgX = cardX + cardW * 0.38;
-    const imgY = cardY + cardH * 0.06;
-
-    // Crop calculation
     const srcRatio = capturedFrame.width / capturedFrame.height;
     const dstRatio = imgW / imgH;
     let sx = 0, sy = 0, sw = capturedFrame.width, sh = capturedFrame.height;
@@ -303,7 +347,10 @@ function draw() {
       sy = (capturedFrame.height - sh) / 2;
     }
 
-    // Image with golden border
+    // Image glow
+    ctx.shadowColor = 'rgba(255, 215, 0, 0.5)';
+    ctx.shadowBlur = 20;
+
     ctx.save();
     ctx.beginPath();
     ctx.roundRect(imgX, imgY, imgW, imgH, 8);
@@ -311,81 +358,104 @@ function draw() {
     ctx.drawImage(capturedFrame, sx, sy, sw, sh, imgX, imgY, imgW, imgH);
     ctx.restore();
 
-    ctx.strokeStyle = '#8b7335';
+    ctx.shadowBlur = 0;
+
+    // Image border with glow
+    ctx.strokeStyle = '#5a4a1a';
     ctx.lineWidth = 3;
     ctx.beginPath();
     ctx.roundRect(imgX, imgY, imgW, imgH, 8);
     ctx.stroke();
 
-    // Player name
-    const nameY = imgY + imgH + cardH * 0.06;
-    ctx.fillStyle = '#2d2d2d';
-    ctx.font = `bold ${cardW * 0.09}px Arial`;
-    ctx.textAlign = 'center';
-    ctx.fillText('PLAYER', cardX + cardW / 2, nameY);
+    // Rating with count-up animation
+    const leftX = drawCardX + cardW * 0.15;
+    const displayRating = Math.floor(ratingStats.overall * Math.min(elapsed / 800, 1));
 
-    // Divider line
-    ctx.strokeStyle = '#8b7335';
+    ctx.fillStyle = '#2d2510';
+    ctx.font = `bold ${cardW * 0.22}px Arial`;
+    ctx.textAlign = 'center';
+    ctx.fillText(displayRating, leftX, drawCardY + cardH * 0.14);
+
+    // Position
+    ctx.font = `bold ${cardW * 0.08}px Arial`;
+    ctx.fillText('ST', leftX, drawCardY + cardH * 0.2);
+
+    // Decorative line
+    ctx.strokeStyle = '#5a4a1a';
     ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.moveTo(cardX + cardW * 0.15, nameY + 15);
-    ctx.lineTo(cardX + cardW * 0.85, nameY + 15);
+    ctx.moveTo(leftX - 25, drawCardY + cardH * 0.22);
+    ctx.lineTo(leftX + 25, drawCardY + cardH * 0.22);
     ctx.stroke();
 
-    // Stats - 2 columns
-    const statsY = nameY + 35;
-    const statsLeft = [
-      { label: 'PAC', value: ratingStats.pac },
-      { label: 'SHO', value: ratingStats.sho },
-      { label: 'PAS', value: ratingStats.pas },
-    ];
-    const statsRight = [
-      { label: 'DRI', value: ratingStats.dri },
-      { label: 'DEF', value: ratingStats.def },
-      { label: 'PHY', value: ratingStats.phy },
-    ];
+    // Name area
+    const nameY = imgY + imgH + cardH * 0.04;
 
-    const statRowH = cardW * 0.085;
-    const col1X = cardX + cardW * 0.28;
-    const col2X = cardX + cardW * 0.72;
-
-    ctx.font = `bold ${cardW * 0.065}px Arial`;
-
-    statsLeft.forEach((stat, i) => {
-      const y = statsY + i * statRowH;
-      ctx.fillStyle = '#2d2d2d';
-      ctx.textAlign = 'right';
-      ctx.fillText(stat.value, col1X - 8, y);
-      ctx.textAlign = 'left';
-      ctx.font = `${cardW * 0.05}px Arial`;
-      ctx.fillText(stat.label, col1X + 8, y);
-      ctx.font = `bold ${cardW * 0.065}px Arial`;
-    });
-
-    statsRight.forEach((stat, i) => {
-      const y = statsY + i * statRowH;
-      ctx.fillStyle = '#2d2d2d';
-      ctx.textAlign = 'right';
-      ctx.fillText(stat.value, col2X - 8, y);
-      ctx.textAlign = 'left';
-      ctx.font = `${cardW * 0.05}px Arial`;
-      ctx.fillText(stat.label, col2X + 8, y);
-      ctx.font = `bold ${cardW * 0.065}px Arial`;
-    });
-
-    // Center divider between stat columns
-    ctx.strokeStyle = '#8b7335';
-    ctx.lineWidth = 1;
+    ctx.fillStyle = 'rgba(45, 37, 16, 0.4)';
     ctx.beginPath();
-    ctx.moveTo(cardX + cardW / 2, statsY - 15);
-    ctx.lineTo(cardX + cardW / 2, statsY + statRowH * 2.5);
+    ctx.roundRect(drawCardX + cardW * 0.08, nameY - 28, cardW * 0.84, 45, 8);
+    ctx.fill();
+
+    ctx.fillStyle = '#2d2510';
+    ctx.font = `bold ${cardW * 0.09}px Arial`;
+    ctx.textAlign = 'center';
+    ctx.fillText('SKILL RATING', drawCardX + cardW / 2, nameY);
+
+    // Stats with staggered animation
+    const statsY = nameY + cardH * 0.065;
+    const allStats = [
+      { label: 'PAC', value: ratingStats.pac, col: 0 },
+      { label: 'SHO', value: ratingStats.sho, col: 0 },
+      { label: 'PAS', value: ratingStats.pas, col: 0 },
+      { label: 'DRI', value: ratingStats.dri, col: 1 },
+      { label: 'DEF', value: ratingStats.def, col: 1 },
+      { label: 'PHY', value: ratingStats.phy, col: 1 },
+    ];
+
+    const statRowH = cardW * 0.072;
+    const col1X = drawCardX + cardW * 0.28;
+    const col2X = drawCardX + cardW * 0.72;
+
+    allStats.forEach((stat, i) => {
+      const delay = 400 + i * 80;
+      const statProgress = Math.min(Math.max((elapsed - delay) / 300, 0), 1);
+      const displayValue = Math.floor(stat.value * statProgress);
+
+      const col = stat.col;
+      const row = col === 0 ? i : i - 3;
+      const x = col === 0 ? col1X : col2X;
+      const y = statsY + row * statRowH;
+
+      // Stat value
+      ctx.fillStyle = '#2d2510';
+      ctx.font = `bold ${cardW * 0.062}px Arial`;
+      ctx.textAlign = 'right';
+      ctx.globalAlpha = statProgress;
+      ctx.fillText(displayValue, x - 8, y);
+
+      // Stat label
+      ctx.font = `${cardW * 0.046}px Arial`;
+      ctx.fillStyle = '#4a3d1f';
+      ctx.textAlign = 'left';
+      ctx.fillText(stat.label, x + 8, y);
+      ctx.globalAlpha = 1;
+    });
+
+    // Center divider
+    ctx.strokeStyle = '#7a5f1a';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(drawCardX + cardW / 2, statsY - 15);
+    ctx.lineTo(drawCardX + cardW / 2, statsY + statRowH * 2.4);
     ctx.stroke();
 
-    // FootSkill AI logo at bottom
-    ctx.fillStyle = '#5a4a2a';
-    ctx.font = `bold ${cardW * 0.04}px Arial`;
+    // Bottom branding
+    ctx.fillStyle = '#4a3d1f';
+    ctx.font = `bold ${cardW * 0.038}px Arial`;
     ctx.textAlign = 'center';
-    ctx.fillText('FOOTSKILL AI', cardX + cardW / 2, cardY + cardH * 0.94);
+    ctx.fillText('⚽ FOOTSKILL AI ⚽', drawCardX + cardW / 2, drawCardY + cardH * 0.92);
+
+    ctx.restore();
   }
 
   ctx.restore();
@@ -472,10 +542,27 @@ ratingBtn.addEventListener('click', () => {
     phy: Math.floor(Math.random() * 15) + 75,
   };
 
+  // Start animation
+  ratingAnimStart = Date.now();
+
+  // Create particles
+  particles = [];
+  for (let i = 0; i < 50; i++) {
+    particles.push({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      size: Math.random() * 4 + 1,
+      speedX: (Math.random() - 0.5) * 2,
+      speedY: (Math.random() - 0.5) * 2 - 1,
+      opacity: Math.random() * 0.8 + 0.2,
+      hue: Math.random() * 60 + 30, // gold hues
+    });
+  }
+
   showRating = true;
   ratingTimeout = setTimeout(() => {
     showRating = false;
-  }, 2000);
+  }, 3500);
 });
 
 // Reset
