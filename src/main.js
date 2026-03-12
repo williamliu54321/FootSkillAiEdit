@@ -224,46 +224,77 @@ function draw() {
     ctx.fillStyle = 'rgba(0, 0, 0, 0.95)';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Large card - nearly full screen
-    const cardW = canvas.width * 0.9;
-    const cardH = canvas.height * 0.9;
+    // Card dimensions - FIFA shield shape
+    const cardW = Math.min(canvas.width * 0.85, 500);
+    const cardH = cardW * 1.45;
     const cardX = (canvas.width - cardW) / 2;
     const cardY = (canvas.height - cardH) / 2;
 
-    // Card background - premium gold gradient
-    const cardGrad = ctx.createLinearGradient(cardX, cardY, cardX + cardW, cardY + cardH);
-    cardGrad.addColorStop(0, '#1a1a1a');
-    cardGrad.addColorStop(0.02, '#c9a227');
-    cardGrad.addColorStop(0.15, '#f4d03f');
-    cardGrad.addColorStop(0.5, '#c9a227');
-    cardGrad.addColorStop(0.85, '#f4d03f');
-    cardGrad.addColorStop(0.98, '#c9a227');
-    cardGrad.addColorStop(1, '#1a1a1a');
-
-    ctx.fillStyle = cardGrad;
+    // Draw shield shape
     ctx.beginPath();
-    ctx.roundRect(cardX, cardY, cardW, cardH, 20);
+    ctx.moveTo(cardX + 20, cardY);
+    ctx.lineTo(cardX + cardW - 20, cardY);
+    ctx.quadraticCurveTo(cardX + cardW, cardY, cardX + cardW, cardY + 20);
+    ctx.lineTo(cardX + cardW, cardY + cardH * 0.75);
+    ctx.quadraticCurveTo(cardX + cardW, cardY + cardH * 0.85, cardX + cardW * 0.85, cardY + cardH * 0.92);
+    ctx.lineTo(cardX + cardW / 2, cardY + cardH);
+    ctx.lineTo(cardX + cardW * 0.15, cardY + cardH * 0.92);
+    ctx.quadraticCurveTo(cardX, cardY + cardH * 0.85, cardX, cardY + cardH * 0.75);
+    ctx.lineTo(cardX, cardY + 20);
+    ctx.quadraticCurveTo(cardX, cardY, cardX + 20, cardY);
+    ctx.closePath();
+
+    // Gold gradient fill
+    const cardGrad = ctx.createLinearGradient(cardX, cardY, cardX + cardW, cardY + cardH);
+    cardGrad.addColorStop(0, '#d4a84b');
+    cardGrad.addColorStop(0.3, '#f5e6a3');
+    cardGrad.addColorStop(0.5, '#d4a84b');
+    cardGrad.addColorStop(0.7, '#f5e6a3');
+    cardGrad.addColorStop(1, '#d4a84b');
+    ctx.fillStyle = cardGrad;
     ctx.fill();
 
-    // Outer glow
-    ctx.shadowColor = '#ffd700';
-    ctx.shadowBlur = 30;
-    ctx.strokeStyle = '#fff8dc';
+    // Card border
+    ctx.strokeStyle = '#8b7335';
     ctx.lineWidth = 3;
     ctx.stroke();
-    ctx.shadowBlur = 0;
 
-    // Large player image - main focus
-    const imgW = cardW * 0.75;
-    const imgH = cardH * 0.55;
-    const imgX = cardX + (cardW - imgW) / 2;
-    const imgY = cardY + 30;
+    // Diagonal shine lines
+    ctx.save();
+    ctx.clip();
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+    ctx.lineWidth = 2;
+    for (let i = -cardH; i < cardW + cardH; i += 25) {
+      ctx.beginPath();
+      ctx.moveTo(cardX + i, cardY);
+      ctx.lineTo(cardX + i - cardH, cardY + cardH);
+      ctx.stroke();
+    }
+    ctx.restore();
 
-    // Calculate crop to fit without stretch
+    // Rating and Position - left side
+    const leftX = cardX + cardW * 0.12;
+
+    // Overall rating
+    ctx.fillStyle = '#2d2d2d';
+    ctx.font = `bold ${cardW * 0.18}px Arial`;
+    ctx.textAlign = 'center';
+    ctx.fillText(ratingStats.overall, leftX, cardY + cardH * 0.12);
+
+    // Position
+    ctx.font = `bold ${cardW * 0.07}px Arial`;
+    ctx.fillText('ST', leftX, cardY + cardH * 0.17);
+
+    // Player image - center right
+    const imgW = cardW * 0.55;
+    const imgH = cardW * 0.55;
+    const imgX = cardX + cardW * 0.38;
+    const imgY = cardY + cardH * 0.06;
+
+    // Crop calculation
     const srcRatio = capturedFrame.width / capturedFrame.height;
     const dstRatio = imgW / imgH;
     let sx = 0, sy = 0, sw = capturedFrame.width, sh = capturedFrame.height;
-
     if (srcRatio > dstRatio) {
       sw = capturedFrame.height * dstRatio;
       sx = (capturedFrame.width - sw) / 2;
@@ -272,97 +303,89 @@ function draw() {
       sy = (capturedFrame.height - sh) / 2;
     }
 
-    // Image with rounded corners
+    // Image with golden border
     ctx.save();
     ctx.beginPath();
-    ctx.roundRect(imgX, imgY, imgW, imgH, 15);
+    ctx.roundRect(imgX, imgY, imgW, imgH, 8);
     ctx.clip();
     ctx.drawImage(capturedFrame, sx, sy, sw, sh, imgX, imgY, imgW, imgH);
     ctx.restore();
 
-    // Image border
-    ctx.strokeStyle = '#1a1a1a';
-    ctx.lineWidth = 4;
+    ctx.strokeStyle = '#8b7335';
+    ctx.lineWidth = 3;
     ctx.beginPath();
-    ctx.roundRect(imgX, imgY, imgW, imgH, 15);
+    ctx.roundRect(imgX, imgY, imgW, imgH, 8);
     ctx.stroke();
 
-    // Big rating circle - top left of image
-    const ratingSize = cardW * 0.18;
-    const ratingX = imgX - ratingSize * 0.3;
-    const ratingY = imgY - ratingSize * 0.3;
+    // Player name
+    const nameY = imgY + imgH + cardH * 0.06;
+    ctx.fillStyle = '#2d2d2d';
+    ctx.font = `bold ${cardW * 0.09}px Arial`;
+    ctx.textAlign = 'center';
+    ctx.fillText('PLAYER', cardX + cardW / 2, nameY);
 
-    // Rating background
-    ctx.fillStyle = '#1a1a1a';
+    // Divider line
+    ctx.strokeStyle = '#8b7335';
+    ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.arc(ratingX + ratingSize/2, ratingY + ratingSize/2, ratingSize/2, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.strokeStyle = '#ffd700';
-    ctx.lineWidth = 4;
+    ctx.moveTo(cardX + cardW * 0.15, nameY + 15);
+    ctx.lineTo(cardX + cardW * 0.85, nameY + 15);
     ctx.stroke();
 
-    // Rating number
-    ctx.fillStyle = '#ffd700';
-    ctx.font = `bold ${ratingSize * 0.55}px Arial`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(ratingStats.overall, ratingX + ratingSize/2, ratingY + ratingSize/2);
-    ctx.textBaseline = 'alphabetic';
-
-    // Position badge - top right
-    const posX = imgX + imgW - 60;
-    const posY = imgY + 25;
-    ctx.fillStyle = '#1a1a1a';
-    ctx.beginPath();
-    ctx.roundRect(posX, posY, 50, 30, 8);
-    ctx.fill();
-    ctx.fillStyle = '#ffd700';
-    ctx.font = `bold ${cardW * 0.04}px Arial`;
-    ctx.textAlign = 'center';
-    ctx.fillText('ST', posX + 25, posY + 22);
-
-    // Stats bar below image
-    const statsY = imgY + imgH + 30;
-    const statsH = cardH * 0.18;
-
-    // Stats background
-    ctx.fillStyle = 'rgba(26, 26, 26, 0.9)';
-    ctx.beginPath();
-    ctx.roundRect(cardX + 20, statsY, cardW - 40, statsH, 12);
-    ctx.fill();
-
-    // Stats in a row
-    const stats = [
+    // Stats - 2 columns
+    const statsY = nameY + 35;
+    const statsLeft = [
       { label: 'PAC', value: ratingStats.pac },
       { label: 'SHO', value: ratingStats.sho },
       { label: 'PAS', value: ratingStats.pas },
+    ];
+    const statsRight = [
       { label: 'DRI', value: ratingStats.dri },
       { label: 'DEF', value: ratingStats.def },
       { label: 'PHY', value: ratingStats.phy },
     ];
 
-    const statWidth = (cardW - 60) / 6;
-    stats.forEach((stat, i) => {
-      const x = cardX + 30 + statWidth * i + statWidth / 2;
-      const y = statsY + statsH / 2;
+    const statRowH = cardW * 0.085;
+    const col1X = cardX + cardW * 0.28;
+    const col2X = cardX + cardW * 0.72;
 
-      // Value
-      ctx.fillStyle = '#ffd700';
-      ctx.font = `bold ${cardW * 0.055}px Arial`;
-      ctx.textAlign = 'center';
-      ctx.fillText(stat.value, x, y - 5);
+    ctx.font = `bold ${cardW * 0.065}px Arial`;
 
-      // Label
-      ctx.fillStyle = '#888';
-      ctx.font = `${cardW * 0.03}px Arial`;
-      ctx.fillText(stat.label, x, y + 22);
+    statsLeft.forEach((stat, i) => {
+      const y = statsY + i * statRowH;
+      ctx.fillStyle = '#2d2d2d';
+      ctx.textAlign = 'right';
+      ctx.fillText(stat.value, col1X - 8, y);
+      ctx.textAlign = 'left';
+      ctx.font = `${cardW * 0.05}px Arial`;
+      ctx.fillText(stat.label, col1X + 8, y);
+      ctx.font = `bold ${cardW * 0.065}px Arial`;
     });
 
-    // Bottom branding
-    ctx.fillStyle = '#1a1a1a';
-    ctx.font = `bold ${cardW * 0.045}px Arial`;
+    statsRight.forEach((stat, i) => {
+      const y = statsY + i * statRowH;
+      ctx.fillStyle = '#2d2d2d';
+      ctx.textAlign = 'right';
+      ctx.fillText(stat.value, col2X - 8, y);
+      ctx.textAlign = 'left';
+      ctx.font = `${cardW * 0.05}px Arial`;
+      ctx.fillText(stat.label, col2X + 8, y);
+      ctx.font = `bold ${cardW * 0.065}px Arial`;
+    });
+
+    // Center divider between stat columns
+    ctx.strokeStyle = '#8b7335';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(cardX + cardW / 2, statsY - 15);
+    ctx.lineTo(cardX + cardW / 2, statsY + statRowH * 2.5);
+    ctx.stroke();
+
+    // FootSkill AI logo at bottom
+    ctx.fillStyle = '#5a4a2a';
+    ctx.font = `bold ${cardW * 0.04}px Arial`;
     ctx.textAlign = 'center';
-    ctx.fillText('FOOTSKILL AI', cardX + cardW / 2, cardY + cardH - 25);
+    ctx.fillText('FOOTSKILL AI', cardX + cardW / 2, cardY + cardH * 0.94);
   }
 
   ctx.restore();
