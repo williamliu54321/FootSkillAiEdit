@@ -80,13 +80,25 @@ header .subtitle {
   color: #888;
 }
 
+/* Editor Layout */
+.editor {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
 /* Video Container */
 .video-container {
   position: relative;
-  width: 100%;
   background: #000;
   border-radius: 12px;
   overflow: hidden;
+  margin: 0 auto;
+  display: inline-block;
+}
+
+.video-wrapper {
+  text-align: center;
 }
 
 .video-container video {
@@ -94,9 +106,11 @@ header .subtitle {
 }
 
 .video-container canvas {
-  width: 100%;
-  height: auto;
   display: block;
+  max-height: 70vh;
+  max-width: 100%;
+  width: auto;
+  height: auto;
 }
 
 /* Controls */
@@ -220,18 +234,18 @@ header .subtitle {
 .toolbar {
   display: flex;
   align-items: center;
-  gap: 15px;
-  padding: 12px 20px;
+  justify-content: center;
+  gap: 8px;
+  padding: 5px 10px;
   background: rgba(255, 255, 255, 0.05);
-  border-radius: 12px;
-  flex-wrap: wrap;
+  border-radius: 6px;
 }
 
 .tool-btn {
-  padding: 10px 20px;
+  padding: 4px 10px;
   border: none;
-  border-radius: 8px;
-  font-size: 0.9rem;
+  border-radius: 4px;
+  font-size: 0.65rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
@@ -241,7 +255,6 @@ header .subtitle {
 
 .tool-btn:hover {
   background: #16a34a;
-  transform: scale(1.02);
 }
 
 .tool-btn.danger {
@@ -252,79 +265,188 @@ header .subtitle {
   background: #dc2626;
 }
 
+.tool-btn.export {
+  background: #6366f1;
+}
+
+.tool-btn.export:hover {
+  background: #4f46e5;
+}
+
+.tool-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 #time-display {
   font-family: monospace;
-  font-size: 1rem;
+  font-size: 0.65rem;
   color: #888;
-  min-width: 100px;
 }
 
-/* Effect Buttons */
-.effect-buttons {
+/* Controls Row */
+.controls-row {
   display: flex;
   gap: 8px;
-  margin-left: auto;
 }
 
-.effect-btn {
-  padding: 8px 16px;
-  border: 2px solid;
-  border-radius: 20px;
-  font-size: 0.85rem;
+.control-group {
+  flex: 1;
+  padding: 6px 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+}
+
+.control-group h3 {
+  font-size: 0.6rem;
+  color: #888;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Toggle Switches */
+.toggle-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 5px;
+}
+
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+
+.toggle input {
+  display: none;
+}
+
+.toggle-slider {
+  width: 26px;
+  height: 14px;
+  background: #444;
+  border-radius: 7px;
+  position: relative;
+  transition: background 0.2s;
+}
+
+.toggle-slider::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 10px;
+  height: 10px;
+  background: #888;
+  border-radius: 50%;
+  transition: all 0.2s;
+}
+
+.toggle input:checked + .toggle-slider {
+  background: #22c55e;
+}
+
+.toggle input:checked + .toggle-slider::after {
+  left: 14px;
+  background: white;
+}
+
+.toggle-label {
+  font-size: 0.6rem;
+  color: #ccc;
+}
+
+/* Range Buttons */
+.range-buttons {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.range-btn {
+  padding: 3px 6px;
+  border: none;
+  border-radius: 3px;
+  font-size: 0.55rem;
   font-weight: 600;
   cursor: pointer;
+  background: #374151;
+  color: white;
   transition: all 0.2s;
-  background: transparent;
 }
 
-.effect-btn.skeleton {
-  border-color: #22c55e;
+.range-btn:hover {
+  background: #4b5563;
+}
+
+.range-btn.rating-place {
+  background: #f59e0b;
+  color: #1a1a1a;
+}
+
+.range-btn.rating-place:hover {
+  background: #fbbf24;
+}
+
+#range-display,
+#rating-range-display {
+  flex: 1;
+  text-align: center;
+  font-family: monospace;
+  font-size: 0.55rem;
   color: #22c55e;
 }
 
-.effect-btn.skeleton:hover {
-  background: #22c55e;
-  color: white;
+/* Rating Controls */
+.rating-controls {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 4px;
 }
 
-.effect-btn.scan {
-  border-color: #6366f1;
-  color: #6366f1;
-}
-
-.effect-btn.scan:hover {
-  background: #6366f1;
-  color: white;
-}
-
-.effect-btn.rating {
-  border-color: #f59e0b;
+.capture-btn {
+  padding: 3px 6px;
+  border: 1px solid #f59e0b;
+  border-radius: 3px;
+  font-size: 0.55rem;
+  font-weight: 600;
+  cursor: pointer;
+  background: transparent;
   color: #f59e0b;
+  transition: all 0.2s;
 }
 
-.effect-btn.rating:hover {
+.capture-btn:hover {
   background: #f59e0b;
   color: white;
+}
+
+#capture-status {
+  font-size: 0.5rem;
+  color: #888;
 }
 
 /* Timeline Container */
 .timeline-container {
   background: rgba(0, 0, 0, 0.3);
-  border-radius: 12px;
-  padding: 15px;
+  border-radius: 6px;
+  padding: 6px;
   overflow: hidden;
 }
 
 .timeline {
   position: relative;
-  min-height: 180px;
+  min-height: 60px;
 }
 
 /* Timeline Tracks */
 .timeline-track {
   display: flex;
   align-items: center;
-  height: 44px;
+  height: 20px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
@@ -333,9 +455,9 @@ header .subtitle {
 }
 
 .track-label {
-  width: 80px;
-  padding: 0 12px;
-  font-size: 0.8rem;
+  width: 40px;
+  padding: 0 4px;
+  font-size: 0.5rem;
   font-weight: 600;
   color: #888;
   flex-shrink: 0;
@@ -344,9 +466,9 @@ header .subtitle {
 .track-content {
   position: relative;
   flex: 1;
-  height: 32px;
+  height: 16px;
   background: rgba(255, 255, 255, 0.03);
-  border-radius: 4px;
+  border-radius: 2px;
 }
 
 /* Effect Blocks */
@@ -369,12 +491,8 @@ header .subtitle {
   filter: brightness(1.2);
 }
 
-.effect-block.skeleton {
-  background: linear-gradient(135deg, #22c55e, #16a34a);
-}
-
-.effect-block.scan {
-  background: linear-gradient(135deg, #6366f1, #4f46e5);
+.effect-block.effects {
+  background: linear-gradient(135deg, #22c55e, #6366f1);
 }
 
 .effect-block.rating {
@@ -413,38 +531,49 @@ header .subtitle {
   position: absolute;
   top: 0;
   width: 2px;
-  height: calc(100% - 30px);
+  height: calc(100% - 20px);
   background: #ff4444;
   z-index: 10;
-  pointer-events: none;
-  box-shadow: 0 0 8px rgba(255, 68, 68, 0.5);
+  pointer-events: auto;
+  cursor: ew-resize;
+  box-shadow: 0 0 6px rgba(255, 68, 68, 0.5);
 }
 
 .playhead::before {
   content: '';
   position: absolute;
-  top: -6px;
-  left: -5px;
-  width: 12px;
-  height: 12px;
+  top: -4px;
+  left: -6px;
+  width: 14px;
+  height: 14px;
   background: #ff4444;
   border-radius: 50%;
+  cursor: ew-resize;
+}
+
+/* Captured frame preview */
+.captured-preview {
+  width: 80px;
+  height: 120px;
+  border-radius: 4px;
+  border: 2px solid #f59e0b;
+  object-fit: cover;
 }
 
 /* Timeline Ruler */
 .timeline-ruler {
   position: relative;
-  height: 25px;
-  margin-top: 8px;
+  height: 18px;
+  margin-top: 4px;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .ruler-marker {
   position: absolute;
   transform: translateX(-50%);
-  font-size: 0.7rem;
+  font-size: 0.55rem;
   color: #666;
-  padding-top: 6px;
+  padding-top: 4px;
 }
 
 /* Instructions */
