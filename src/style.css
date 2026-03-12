@@ -154,6 +154,16 @@ header .subtitle {
   50% { box-shadow: 0 0 0 10px rgba(34, 197, 94, 0); }
 }
 
+#rating-btn {
+  background: linear-gradient(135deg, #c9a227, #f4d03f);
+  color: #1a1a1a;
+  font-weight: 700;
+}
+
+#rating-btn:hover {
+  background: linear-gradient(135deg, #f4d03f, #c9a227);
+}
+
 #reset-btn {
   background: #374151;
   color: white;

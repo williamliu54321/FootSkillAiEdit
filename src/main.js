@@ -24,6 +24,7 @@ document.querySelector('#app').innerHTML = `
       <button id="play-btn">Play</button>
       <button id="pause-btn">Pause</button>
       <button id="scan-btn">🔍 Analyze</button>
+      <button id="rating-btn">⚽ Rate</button>
       <button id="reset-btn">New Video</button>
     </div>
 
@@ -46,6 +47,7 @@ const videoUpload = document.getElementById('video-upload');
 const playBtn = document.getElementById('play-btn');
 const pauseBtn = document.getElementById('pause-btn');
 const scanBtn = document.getElementById('scan-btn');
+const ratingBtn = document.getElementById('rating-btn');
 const resetBtn = document.getElementById('reset-btn');
 
 let pose = null;
@@ -54,6 +56,10 @@ let scanAnimationId = null;
 let isScanning = false;
 let scanY = 0;
 let lastPoseResults = null;
+let showRating = false;
+let ratingTimeout = null;
+let capturedFrame = null;
+let ratingStats = null;
 
 // Pose connections for skeleton
 const POSE_CONNECTIONS = [
@@ -212,6 +218,153 @@ function draw() {
     }
   }
 
+  // FIFA-style rating overlay
+  if (showRating && capturedFrame) {
+    // Full dark overlay
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.95)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Large card - nearly full screen
+    const cardW = canvas.width * 0.9;
+    const cardH = canvas.height * 0.9;
+    const cardX = (canvas.width - cardW) / 2;
+    const cardY = (canvas.height - cardH) / 2;
+
+    // Card background - premium gold gradient
+    const cardGrad = ctx.createLinearGradient(cardX, cardY, cardX + cardW, cardY + cardH);
+    cardGrad.addColorStop(0, '#1a1a1a');
+    cardGrad.addColorStop(0.02, '#c9a227');
+    cardGrad.addColorStop(0.15, '#f4d03f');
+    cardGrad.addColorStop(0.5, '#c9a227');
+    cardGrad.addColorStop(0.85, '#f4d03f');
+    cardGrad.addColorStop(0.98, '#c9a227');
+    cardGrad.addColorStop(1, '#1a1a1a');
+
+    ctx.fillStyle = cardGrad;
+    ctx.beginPath();
+    ctx.roundRect(cardX, cardY, cardW, cardH, 20);
+    ctx.fill();
+
+    // Outer glow
+    ctx.shadowColor = '#ffd700';
+    ctx.shadowBlur = 30;
+    ctx.strokeStyle = '#fff8dc';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    // Large player image - main focus
+    const imgW = cardW * 0.75;
+    const imgH = cardH * 0.55;
+    const imgX = cardX + (cardW - imgW) / 2;
+    const imgY = cardY + 30;
+
+    // Calculate crop to fit without stretch
+    const srcRatio = capturedFrame.width / capturedFrame.height;
+    const dstRatio = imgW / imgH;
+    let sx = 0, sy = 0, sw = capturedFrame.width, sh = capturedFrame.height;
+
+    if (srcRatio > dstRatio) {
+      sw = capturedFrame.height * dstRatio;
+      sx = (capturedFrame.width - sw) / 2;
+    } else {
+      sh = capturedFrame.width / dstRatio;
+      sy = (capturedFrame.height - sh) / 2;
+    }
+
+    // Image with rounded corners
+    ctx.save();
+    ctx.beginPath();
+    ctx.roundRect(imgX, imgY, imgW, imgH, 15);
+    ctx.clip();
+    ctx.drawImage(capturedFrame, sx, sy, sw, sh, imgX, imgY, imgW, imgH);
+    ctx.restore();
+
+    // Image border
+    ctx.strokeStyle = '#1a1a1a';
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.roundRect(imgX, imgY, imgW, imgH, 15);
+    ctx.stroke();
+
+    // Big rating circle - top left of image
+    const ratingSize = cardW * 0.18;
+    const ratingX = imgX - ratingSize * 0.3;
+    const ratingY = imgY - ratingSize * 0.3;
+
+    // Rating background
+    ctx.fillStyle = '#1a1a1a';
+    ctx.beginPath();
+    ctx.arc(ratingX + ratingSize/2, ratingY + ratingSize/2, ratingSize/2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#ffd700';
+    ctx.lineWidth = 4;
+    ctx.stroke();
+
+    // Rating number
+    ctx.fillStyle = '#ffd700';
+    ctx.font = `bold ${ratingSize * 0.55}px Arial`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(ratingStats.overall, ratingX + ratingSize/2, ratingY + ratingSize/2);
+    ctx.textBaseline = 'alphabetic';
+
+    // Position badge - top right
+    const posX = imgX + imgW - 60;
+    const posY = imgY + 25;
+    ctx.fillStyle = '#1a1a1a';
+    ctx.beginPath();
+    ctx.roundRect(posX, posY, 50, 30, 8);
+    ctx.fill();
+    ctx.fillStyle = '#ffd700';
+    ctx.font = `bold ${cardW * 0.04}px Arial`;
+    ctx.textAlign = 'center';
+    ctx.fillText('ST', posX + 25, posY + 22);
+
+    // Stats bar below image
+    const statsY = imgY + imgH + 30;
+    const statsH = cardH * 0.18;
+
+    // Stats background
+    ctx.fillStyle = 'rgba(26, 26, 26, 0.9)';
+    ctx.beginPath();
+    ctx.roundRect(cardX + 20, statsY, cardW - 40, statsH, 12);
+    ctx.fill();
+
+    // Stats in a row
+    const stats = [
+      { label: 'PAC', value: ratingStats.pac },
+      { label: 'SHO', value: ratingStats.sho },
+      { label: 'PAS', value: ratingStats.pas },
+      { label: 'DRI', value: ratingStats.dri },
+      { label: 'DEF', value: ratingStats.def },
+      { label: 'PHY', value: ratingStats.phy },
+    ];
+
+    const statWidth = (cardW - 60) / 6;
+    stats.forEach((stat, i) => {
+      const x = cardX + 30 + statWidth * i + statWidth / 2;
+      const y = statsY + statsH / 2;
+
+      // Value
+      ctx.fillStyle = '#ffd700';
+      ctx.font = `bold ${cardW * 0.055}px Arial`;
+      ctx.textAlign = 'center';
+      ctx.fillText(stat.value, x, y - 5);
+
+      // Label
+      ctx.fillStyle = '#888';
+      ctx.font = `${cardW * 0.03}px Arial`;
+      ctx.fillText(stat.label, x, y + 22);
+    });
+
+    // Bottom branding
+    ctx.fillStyle = '#1a1a1a';
+    ctx.font = `bold ${cardW * 0.045}px Arial`;
+    ctx.textAlign = 'center';
+    ctx.fillText('FOOTSKILL AI', cardX + cardW / 2, cardY + cardH - 25);
+  }
+
   ctx.restore();
   scanAnimationId = requestAnimationFrame(draw);
 }
@@ -271,6 +424,35 @@ scanBtn.addEventListener('click', () => {
   scanY = -80;
   scanBtn.textContent = isScanning ? '✓ Scanning' : '🔍 Analyze';
   scanBtn.classList.toggle('active', isScanning);
+});
+
+// FIFA Rating popup - capture frame and show card
+ratingBtn.addEventListener('click', () => {
+  if (ratingTimeout) clearTimeout(ratingTimeout);
+
+  // Capture current video frame
+  const tempCanvas = document.createElement('canvas');
+  tempCanvas.width = video.videoWidth;
+  tempCanvas.height = video.videoHeight;
+  const tempCtx = tempCanvas.getContext('2d');
+  tempCtx.drawImage(video, 0, 0);
+  capturedFrame = tempCanvas;
+
+  // Generate stats once
+  ratingStats = {
+    overall: Math.floor(Math.random() * 15) + 80,
+    pac: Math.floor(Math.random() * 15) + 80,
+    sho: Math.floor(Math.random() * 15) + 80,
+    pas: Math.floor(Math.random() * 15) + 80,
+    dri: Math.floor(Math.random() * 15) + 80,
+    def: Math.floor(Math.random() * 20) + 50,
+    phy: Math.floor(Math.random() * 15) + 75,
+  };
+
+  showRating = true;
+  ratingTimeout = setTimeout(() => {
+    showRating = false;
+  }, 2000);
 });
 
 // Reset
