@@ -869,12 +869,6 @@ function drawRatingCard(elapsed) {
   ctx.lineWidth = 1.5;
   ctx.stroke();
 
-  // Inner ring 2
-  hexPath(ratingX, ratingY, badgeSize * 0.7, 1.15);
-  ctx.strokeStyle = 'rgba(255, 215, 0, 0.3)';
-  ctx.lineWidth = 1;
-  ctx.stroke();
-
   // Decorative corner dots
   for (let i = 0; i < 6; i++) {
     const angle = (Math.PI / 3) * i - Math.PI / 2;
